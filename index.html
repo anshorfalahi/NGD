@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Happy National Girlfriend Day!</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #000;
+            color: #fff;
+            font-family: 'Helvetica Neue', sans-serif;
+        }
+        #container {
+            width: 100vw;
+            height: 100vh;
+            cursor: move;
+        }
+        #info {
+            position: absolute;
+            top: 10px;
+            width: 100%;
+            text-align: center;
+            z-index: 100;
+            display:block;
+            text-shadow: 0 0 5px #fff;
+            animation: fadeIn 3s ease-in-out;
+            pointer-events: none; /* Agar tidak menghalangi interaksi mouse */
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        #music-control {
+            position: absolute;
+            top: 20px;
+            right: 25px;
+            z-index: 101;
+            cursor: pointer;
+            font-size: 30px; /* Ukuran emoji */
+            text-shadow: 0 0 8px #000; /* Bayangan agar emoji terlihat jelas */
+        }
+    </style>
+    <script>
+        // Mencegah klik kanan
+        document.addEventListener('contextmenu', event => event.preventDefault());
+
+        // Mencegah shortcut keyboard untuk membuka DevTools
+        document.addEventListener('keydown', function (event) {
+            if (event.key === 'F12' || (event.ctrlKey && event.shiftKey && (event.key === 'I' || event.key === 'J' || event.key === 'C')) ||(event.ctrlKey && event.key === 'u')) { // Mencegah Ctrl+U (View Source)
+                event.preventDefault();
+            }
+        });
+    </script>
+</head>
+<body>
+    <div id="info">Klik & Geser untuk memutar | Scroll untuk zoom</div>
+    <div id="container"></div>
+    
+    <div id="music-control">🔇</div>
+
+    <audio id="background-music" loop src="Ed Sheeran - Perfect.mp3 "></audio>
+
+    <script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.155.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.155.0/examples/jsm/"
+            }
+        }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+        let scene, camera, renderer, controls;
+        const particles = [];
+        const mainParticleCount = 400;
+        const dustParticleCount = 2000;
+        
+        const textToRender = 'Happy National Girlfriend Day Iaaku♡';
+
+        const softColors = [
+            new THREE.Color(0xffc0cb),
+            new THREE.Color(0xe6e6fa),
+            new THREE.Color(0xadd8e6),
+            new THREE.Color(0x98fb98),
+        ];
+
+        function init() {
+            scene = new THREE.Scene();
+
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 5000);
+            camera.position.z = 800;
+
+            const container = document.getElementById('container');
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            container.appendChild(renderer.domElement);
+
+            controls = new OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.screenSpacePanning = false;
+            
+            controls.minPolarAngle = 0;
+            controls.maxPolarAngle = Math.PI;
+
+            controls.minDistance = 10;
+            controls.maxDistance = 2000;
+
+            const textureLoader = new THREE.TextureLoader();
+            
+            // GANTI LINK DI BAWAH INI DENGAN LINK FOTO ANDA
+            const photoUrls = [
+                'iaa.jpg',
+            ];
+
+            const photoMaterials = photoUrls.map(url => {
+                const texture = textureLoader.load(url);
+                return new THREE.SpriteMaterial({ 
+                    map: texture,
+                });
+            });
+
+            const textMaterial = createWarpedTextMaterial(textToRender);
+            const heartMaterial = createSmoothHeartMaterial();
+            const dotMaterial = createDotMaterial();
+            
+            const spawnRange = 2000;
+
+            for (let i = 0; i < mainParticleCount; i++) {
+                const choice = Math.random();
+                let material;
+                let isText = false;
+                let scale;
+
+                if (choice < 0.4) { // 40% Teks
+                    material = textMaterial.clone();
+                    isText = true;
+                    scale = Math.random() * 200 + 300;
+                } else if (choice < 0.8) { // 40% Hati
+                    material = heartMaterial.clone();
+                    scale = Math.random() * 30 + 40;
+                } else {  // 20% Foto
+                    material = photoMaterials[Math.floor(Math.random() * photoMaterials.length)].clone();
+                    scale = Math.random() * 60 + 80; // Ukuran foto
+                }
+                
+                const particle = new THREE.Sprite(material);
+                particle.position.set(
+                    (Math.random() - 0.5) * spawnRange,
+                    (Math.random() - 0.5) * spawnRange,
+                    (Math.random() - 0.5) * spawnRange
+                );
+                particle.scale.set(scale, scale * (isText ? 0.25 : 1), 1);
+                particle.velocity = new THREE.Vector3(0, 0, -(Math.random() * 0.9 + 0.6));
+                particle.isText = isText;
+                particles.push(particle);
+                scene.add(particle);
+            }
+            
+            for (let i = 0; i < dustParticleCount; i++) {
+                const particle = new THREE.Sprite(dotMaterial.clone());
+                particle.position.set(
+                    (Math.random() - 0.5) * (spawnRange + 1000),
+                    (Math.random() - 0.5) * (spawnRange + 1000),
+                    (Math.random() - 0.5) * (spawnRange + 1000)
+                );
+                const scale = Math.random() * 5 + 1;
+                particle.scale.set(scale, scale, 1);
+                particle.velocity = new THREE.Vector3(0, 0, -(Math.random() * 0.2 + 0.1));
+                particle.isText = false;
+                particles.push(particle);
+                scene.add(particle);
+            }
+
+            window.addEventListener('resize', onWindowResize, false);
+            
+            // --- Logika Kontrol Musik Baru ---
+            const musicControl = document.getElementById('music-control');
+            const music = document.getElementById('background-music');
+            const info = document.getElementById('info');
+
+            // Fungsi untuk memutar/menjeda musik (untuk tombol)
+            function toggleMusic() {
+                if (music.paused) {
+                    music.play().catch(e => console.error("Gagal memutar musik:", e));
+                    musicControl.textContent = '🔊';
+                } else {
+                    music.pause();
+                    musicControl.textContent = '🔇';
+                }
+            }
+            
+            // Fungsi untuk memulai musik saat interaksi pertama dengan halaman
+            function startMusicOnFirstInteraction() {
+                if (music.paused) {
+                    music.play().catch(e => console.error("Gagal memulai musik:", e));
+                    musicControl.textContent = '🔊';
+                    if (info.style.opacity !== '0') {
+                        info.style.transition = 'opacity 1s';
+                        info.style.opacity = '0';
+                    }
+                }
+            }
+
+            // Tambahkan event listener untuk tombol musik
+            musicControl.addEventListener('click', toggleMusic);
+
+            // Tambahkan event listener yang berjalan SEKALI SAJA pada interaksi pertama
+            document.body.addEventListener('mousedown', startMusicOnFirstInteraction, { once: true });
+            document.body.addEventListener('touchstart', startMusicOnFirstInteraction, { once: true });
+            window.addEventListener('scroll', startMusicOnFirstInteraction, { once: true });
+        }
+        
+        function createWarpedTextMaterial(text) {
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            const fontSize = 72;
+            const canvasWidth = 1400;
+            const canvasHeight = 300;
+            canvas.width = canvasWidth;
+            canvas.height = canvasHeight;
+            context.font = `bold ${fontSize}px "Comic Sans MS", cursive, sans-serif`;
+            context.shadowColor = "rgba(255, 105, 180, 0.8)";
+            context.shadowBlur = 15;
+            context.fillStyle = 'white';
+            context.textAlign = 'center';
+            context.textBaseline = 'middle';
+            const waveAmplitude = 6;
+            const waveFrequency = 0.04;
+            const textWidth = context.measureText(text).width;
+            const startX = (canvasWidth - textWidth) / 2;
+            for (let i = 0; i < text.length; i++) {
+                const char = text[i];
+                const charWidth = context.measureText(char).width;
+                const prevCharsWidth = context.measureText(text.substring(0, i)).width;
+                const x = startX + prevCharsWidth + charWidth / 2;
+                const yOffset = Math.sin(i * waveFrequency) * waveAmplitude;
+                context.fillText(char, x, canvasHeight / 2 + yOffset);
+            }
+            const texture = new THREE.CanvasTexture(canvas);
+            return new THREE.SpriteMaterial({
+                map: texture,
+                blending: THREE.AdditiveBlending,
+                depthTest: false,
+                transparent: true,
+            });
+        }
+        
+        function createSmoothHeartMaterial() {
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            canvas.width = 64; canvas.height = 64;
+            const heartPath = new Path2D("M32,59.33C14.33,44.25,0,32.31,0,19.33a16,16,0,0,1,32-1.07,16,16,0,0,1,32,1.07C64,32.31,49.67,44.25,32,59.33Z");
+            context.fillStyle = '#ff2e5a';
+            context.fill(heartPath);
+            const texture = new THREE.CanvasTexture(canvas);
+            return new THREE.SpriteMaterial({
+                map: texture,
+                blending: THREE.AdditiveBlending,
+                depthTest: false,
+                transparent: true,
+            });
+        }
+
+        function createDotMaterial() {
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            canvas.width = 32; canvas.height = 32;
+            context.beginPath();
+            context.arc(16, 16, 16, 0, 2 * Math.PI);
+            context.fillStyle = 'rgba(255, 255, 255, 0.8)';
+            context.fill();
+            const texture = new THREE.CanvasTexture(canvas);
+            return new THREE.SpriteMaterial({
+                map: texture,
+                blending: THREE.AdditiveBlending,
+                depthTest: false,
+                transparent: true,
+            });
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+        
+        const tempColor = new THREE.Color();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const cycleDuration = 8000;
+            const time = Date.now() % (cycleDuration * softColors.length);
+            const colorIndex = Math.floor(time / cycleDuration);
+            const nextColorIndex = (colorIndex + 1) % softColors.length;
+            const lerpFactor = (time % cycleDuration) / cycleDuration;
+            const currentColor = tempColor.copy(softColors[colorIndex]).lerp(softColors[nextColorIndex], lerpFactor);
+
+            particles.forEach(p => {
+                p.position.add(p.velocity);
+                if (p.position.z < -1000) {
+                    p.position.z = 1000;
+                    p.position.x = (Math.random() - 0.5) * 2000;
+                    p.position.y = (Math.random() - 0.5) * 2000;
+                }
+                if (p.isText) {
+                    p.material.color.copy(currentColor);
+                }
+            });
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        init();
+        animate();
+    </script>
+</body>
+</html>
