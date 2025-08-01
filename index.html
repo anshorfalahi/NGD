@@ -212,10 +212,41 @@
             // Tambahkan event listener untuk tombol musik
             musicControl.addEventListener('click', toggleMusic);
 
-            // Tambahkan event listener yang berjalan SEKALI SAJA pada interaksi pertama
+            function onWindowResize() {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            }
+
+            function goFullscreen() {
+                const elem = document.documentElement;
+                if (elem.requestFullscreen) {
+                    elem.requestFullscreen().catch(err => console.warn("Gagal fullscreen:", err));
+                } else if (elem.webkitRequestFullscreen) {
+                    elem.webkitRequestFullscreen();
+                } else if (elem.msRequestFullscreen) {
+                    elem.msRequestFullscreen();
+                }
+            }
+
+            function startMusicOnFirstInteraction() {
+                goFullscreen();
+
+                if (music.paused) {
+                    music.play().catch(e => console.error("Gagal memulai musik:", e));
+                    musicControl.textContent = '🔊';
+                    if (info.style.opacity !== '0') {
+                        info.style.transition = 'opacity 1s';
+                        info.style.opacity = '0';
+                    }
+                }
+            }
+
+            // Tambahkan listener hanya sekali
             document.body.addEventListener('mousedown', startMusicOnFirstInteraction, { once: true });
             document.body.addEventListener('touchstart', startMusicOnFirstInteraction, { once: true });
             window.addEventListener('scroll', startMusicOnFirstInteraction, { once: true });
+
         }
         
         function createWarpedTextMaterial(text) {
